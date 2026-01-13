@@ -1,5 +1,5 @@
 {
-  "name": "gestao-produtos",
+  "name": "order-management-api",
   "version": "1.0.0",
   "description": "API RESTful para cadastro de produtos e pedidos",
   "main": "src/app.js",
