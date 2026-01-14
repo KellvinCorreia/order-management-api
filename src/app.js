@@ -20,6 +20,14 @@ app.use((req, res, next) => {
 
 app.use('/api', routes);
 
+// Middleware Global de Erro (Catch-all para 500)
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res
+    .status(500)
+    .json({ error: 'Erro interno do servidor. Tente novamente mais tarde.' });
+});
+
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });

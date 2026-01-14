@@ -1,7 +1,7 @@
 import { db } from '../db.js';
 
 export const getAllOrders = (req, res) => {
-  res.json(db.orders);
+  res.status(200).json(db.orders);
 };
 
 export const getOrderById = (req, res) => {
@@ -15,7 +15,7 @@ export const getOrderById = (req, res) => {
   const order = db.orders.find(o => o.id === id);
 
   if (order) {
-    res.json(order);
+    res.status(200).json(order);
   } else {
     res.status(404).json({ error: 'Pedido não encontrado' });
   }
@@ -84,7 +84,7 @@ export const updateOrder = (req, res) => {
       }
       db.orders[index].items = items;
     }
-    res.json(db.orders[index]);
+    res.status(200).json(db.orders[index]);
   } else {
     res.status(404).json({ error: 'Pedido não encontrado para atualização' });
   }
@@ -119,5 +119,5 @@ export const searchOrders = (req, res) => {
     result = result.filter(order => order.customerId === cId);
   }
 
-  res.json(result);
+  res.status(200).json(result);
 };

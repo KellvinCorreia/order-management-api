@@ -1,7 +1,7 @@
 import { db } from '../db.js';
 
 export const getAllCustomers = (req, res) => {
-  res.json(db.customers);
+  res.status(200).json(db.customers);
 };
 
 export const getCustomerById = (req, res) => {
@@ -15,7 +15,7 @@ export const getCustomerById = (req, res) => {
   const customer = db.customers.find(c => c.id === id);
 
   if (customer) {
-    res.json(customer);
+    res.status(200).json(customer);
   } else {
     res.status(404).json({ error: 'Cliente não encontrado' });
   }
@@ -81,7 +81,7 @@ export const updateCustomer = (req, res) => {
       customer.email = email;
     }
 
-    res.json(customer);
+    res.status(200).json(customer);
   } else {
     res.status(404).json({ error: 'Cliente não encontrado para atualização' });
   }
