@@ -1,22 +1,38 @@
 import { db } from '../db.js';
 
 export const getAllOrders = (req, res) => {
-  res.json(db.orders);
+  res.status(200).json(db.orders);
 };
 
 export const getOrderById = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const order = db.orders.find(o => o.id === id);
 
   if (order) {
-    res.json(order);
+    res.status(200).json(order);
   } else {
     res.status(404).json({ error: 'Pedido não encontrado' });
   }
 };
 
 export const createOrder = (req, res) => {
-  const { items } = req.body;
+  const { items, customerId } = req.body;
+
+  // Validação do Cliente
+  if (!customerId) {
+    return res.status(400).json({ error: 'O ID do cliente é obrigatório.' });
+  }
+
+  const customerExists = db.customers.find(c => c.id === customerId);
+  if (!customerExists) {
+    return res.status(400).json({ error: 'Cliente não encontrado.' });
+  }
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return res
@@ -36,6 +52,7 @@ export const createOrder = (req, res) => {
 
   const newOrder = {
     id: db._sequences.orders++,
+    customerId,
     items // items structure: [{ id: productId, quantity: number }]
   };
 
@@ -45,6 +62,12 @@ export const createOrder = (req, res) => {
 
 export const updateOrder = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const { items } = req.body;
   const index = db.orders.findIndex(o => o.id === id);
 
@@ -61,7 +84,7 @@ export const updateOrder = (req, res) => {
       }
       db.orders[index].items = items;
     }
-    res.json(db.orders[index]);
+    res.status(200).json(db.orders[index]);
   } else {
     res.status(404).json({ error: 'Pedido não encontrado para atualização' });
   }
@@ -69,6 +92,9 @@ export const updateOrder = (req, res) => {
 
 export const deleteOrder = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const index = db.orders.findIndex(o => o.id === id);
 
   if (index !== -1) {
@@ -77,4 +103,21 @@ export const deleteOrder = (req, res) => {
   } else {
     res.status(404).json({ error: 'Pedido não encontrado para remoção' });
   }
+};
+
+export const searchOrders = (req, res) => {
+  const { product_id, customer_id } = req.query;
+  let result = db.orders;
+
+  if (product_id) {
+    const pId = parseInt(product_id);
+    result = result.filter(order => order.items.some(item => item.id === pId));
+  }
+
+  if (customer_id) {
+    const cId = parseInt(customer_id);
+    result = result.filter(order => order.customerId === cId);
+  }
+
+  res.status(200).json(result);
 };
