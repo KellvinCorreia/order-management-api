@@ -89,3 +89,20 @@ export const deleteOrder = (req, res) => {
     res.status(404).json({ error: 'Pedido não encontrado para remoção' });
   }
 };
+
+export const searchOrders = (req, res) => {
+  const { product_id, customer_id } = req.query;
+  let result = db.orders;
+
+  if (product_id) {
+    const pId = parseInt(product_id);
+    result = result.filter(order => order.items.some(item => item.id === pId));
+  }
+
+  if (customer_id) {
+    const cId = parseInt(customer_id);
+    result = result.filter(order => order.customerId === cId);
+  }
+
+  res.json(result);
+};
