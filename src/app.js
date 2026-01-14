@@ -5,7 +5,10 @@ import routes from './routes/index.js';
 const app = express();
 const port = 3000;
 
-app.use(cors());
+// Configuração de CORS: Bloqueia acesso de outras origens
+const allowedOrigin = 'http://localhost:3001';
+
+app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
 
 // Middleware de Proteção conta Iframe (Clickjacking)
