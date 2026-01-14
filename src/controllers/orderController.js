@@ -16,7 +16,17 @@ export const getOrderById = (req, res) => {
 };
 
 export const createOrder = (req, res) => {
-  const { items } = req.body;
+  const { items, customerId } = req.body;
+
+  // Validação do Cliente
+  if (!customerId) {
+    return res.status(400).json({ error: 'O ID do cliente é obrigatório.' });
+  }
+
+  const customerExists = db.customers.find(c => c.id === customerId);
+  if (!customerExists) {
+    return res.status(400).json({ error: 'Cliente não encontrado.' });
+  }
 
   if (!items || !Array.isArray(items) || items.length === 0) {
     return res
@@ -36,6 +46,7 @@ export const createOrder = (req, res) => {
 
   const newOrder = {
     id: db._sequences.orders++,
+    customerId,
     items // items structure: [{ id: productId, quantity: number }]
   };
 
