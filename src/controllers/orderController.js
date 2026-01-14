@@ -6,6 +6,12 @@ export const getAllOrders = (req, res) => {
 
 export const getOrderById = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const order = db.orders.find(o => o.id === id);
 
   if (order) {
@@ -56,6 +62,12 @@ export const createOrder = (req, res) => {
 
 export const updateOrder = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const { items } = req.body;
   const index = db.orders.findIndex(o => o.id === id);
 
@@ -80,6 +92,9 @@ export const updateOrder = (req, res) => {
 
 export const deleteOrder = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const index = db.orders.findIndex(o => o.id === id);
 
   if (index !== -1) {

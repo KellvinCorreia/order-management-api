@@ -6,6 +6,12 @@ export const getAllCustomers = (req, res) => {
 
 export const getCustomerById = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const customer = db.customers.find(c => c.id === id);
 
   if (customer) {
@@ -18,8 +24,14 @@ export const getCustomerById = (req, res) => {
 export const createCustomer = (req, res) => {
   const { name, email } = req.body;
 
-  if (!name || !email) {
-    return res.status(400).json({ error: 'Nome e email são obrigatórios' });
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return res
+      .status(400)
+      .json({ error: 'Nome é obrigatório e deve ser uma string não vazia.' });
+  }
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email é obrigatório.' });
   }
 
   // Basic email validation (simple regex)
@@ -40,13 +52,26 @@ export const createCustomer = (req, res) => {
 
 export const updateCustomer = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const { name, email } = req.body;
   const index = db.customers.findIndex(c => c.id === id);
 
   if (index !== -1) {
     const customer = db.customers[index];
 
-    if (name) customer.name = name;
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length === 0) {
+        return res
+          .status(400)
+          .json({ error: 'Nome deve ser uma string não vazia.' });
+      }
+      customer.name = name;
+    }
 
     if (email) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -64,6 +89,9 @@ export const updateCustomer = (req, res) => {
 
 export const deleteCustomer = (req, res) => {
   const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
   const index = db.customers.findIndex(c => c.id === id);
 
   if (index !== -1) {
