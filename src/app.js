@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerDocument } from './swagger.js';
 import routes from './routes/index.js';
 
 const app = express();
@@ -12,6 +14,13 @@ const allowedOrigin = 'http://localhost:3001';
 
 app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
+
+// Carregar swagger.json
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const swaggerDocument = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'swagger.json'), 'utf8')
+);
 
 // Middleware de Proteção conta Iframe (Clickjacking)
 app.use((req, res, next) => {
