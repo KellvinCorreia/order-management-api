@@ -7,7 +7,12 @@ import {
   deleteProduct
 } from '../controllers/productController.js';
 
+import permissionVerify from './permissionVerify.js';
+
 const router = express.Router();
+
+// Proteção: Todas as rotas abaixo exigem login
+router.use(permissionVerify);
 
 router.get('/product', getAllProducts);
 router.get('/product/:id', getProductById);
