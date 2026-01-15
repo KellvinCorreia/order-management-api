@@ -30,6 +30,12 @@ export const createLogin = (req, res) => {
   });
 };
 
+// --- LOGOUT (POST /api/logout) ---
+export const logout = (req, res) => {
+  res.clearCookie('access_token');
+  res.status(200).json({ message: 'Logout realizado com sucesso.' });
+};
+
 // --- GET OWN PROFILE (GET /api/login/) ---
 export const getOwnProfile = (req, res) => {
   // req.user vem do middleware permissionVerify
