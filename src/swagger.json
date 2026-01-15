@@ -45,10 +45,133 @@
             }
           }
         }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "user": { "type": "string", "example": "admin" },
+          "userType": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["admin"]
+          }
+        }
       }
     }
   },
   "paths": {
+    "/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Realizar Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": { "type": "string" },
+                  "pwd": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login realizado com sucesso (Cookie setado)"
+          },
+          "401": { "description": "Credenciais inválidas" }
+        }
+      },
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Obter perfil do usuário logado",
+        "responses": {
+          "200": { "description": "Perfil do usuário" },
+          "401": { "description": "Não autenticado" }
+        }
+      }
+    },
+    "/login/all": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Listar todos os usuários (Admin)",
+        "responses": {
+          "200": {
+            "description": "Lista de usuários",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/User" }
+                }
+              }
+            }
+          },
+          "403": { "description": "Acesso negado" }
+        }
+      }
+    },
+    "/login/{username}": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Buscar usuário por username (Admin)",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Usuário encontrado" },
+          "404": { "description": "Usuário não encontrado" }
+        }
+      },
+      "put": {
+        "tags": ["Auth"],
+        "summary": "Atualizar usuário (Admin)",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pwd": { "type": "string" },
+                  "userType": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Usuário atualizado" } }
+      },
+      "delete": {
+        "tags": ["Auth"],
+        "summary": "Deletar usuário (Admin)",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": { "204": { "description": "Usuário deletado" } }
+      }
+    },
     "/product": {
       "get": {
         "tags": ["Products"],

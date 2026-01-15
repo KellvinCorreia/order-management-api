@@ -8,7 +8,12 @@ import {
   searchOrders
 } from '../controllers/orderController.js';
 
+import permissionVerify from './permissionVerify.js';
+
 const router = express.Router();
+
+// Proteção: Todas as rotas abaixo exigem login
+router.use(permissionVerify);
 
 router.get('/order', getAllOrders);
 router.get('/order/search', searchOrders);
