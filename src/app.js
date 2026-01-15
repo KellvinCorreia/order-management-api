@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
@@ -9,9 +10,9 @@ import cookieParser from 'cookie-parser';
 import loginRoutes from './routes/loginRoutes.js';
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT;
 
-const allowedOrigin = 'http://localhost:3001';
+const allowedOrigin = 'http://localhost:3000';
 
 app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
