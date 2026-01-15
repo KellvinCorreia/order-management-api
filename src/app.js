@@ -11,36 +11,32 @@ import loginRoutes from './routes/loginRoutes.js';
 const app = express();
 const port = 3000;
 
-// Configuração de CORS: Bloqueia acesso de outras origens
 const allowedOrigin = 'http://localhost:3001';
 
-// app.use(cors({ origin: allowedOrigin }));
-app.use(cors());
+app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
 
-// Carregar swagger.json
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+app.use(express.static(path.join(__dirname, '../../web')));
 const swaggerDocument = JSON.parse(
   fs.readFileSync(path.join(__dirname, 'swagger.json'), 'utf8')
 );
 
-// Middleware de Proteção contra Iframe (Clickjacking)
 app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Content-Security-Policy', "frame-ancestors 'none'");
   next();
 });
 
-app.use(cookieParser()); // Habilita leitura de Cookies
+app.use(cookieParser());
 
-// Rota de Documentação (Swagger)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-app.use('/api', loginRoutes); // Rota de Login (/api/login)
-app.use('/api', routes); // Rotas da Aplicação (Protegidas)
+app.use('/api', loginRoutes);
+app.use('/api', routes);
 
-// Middleware Global de Erro (Catch-all para 500)
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res
