@@ -1,66 +1,83 @@
-# Gestão de Pedidos API
+# Sistema de Gestão de Pedidos (Fullstack)
 
-API RESTful simples desenvolvida em Node.js com Express e arquitetura MVC, para gerenciamento de produtos, pedidos e clientes.
+Aplicação completa com Backend (Node.js/Express) e Frontend (HTML/CSS/JS), implementando segurança via JWT e controle de acesso (RBAC).
 
-## Estrutura do Projeto
+## 🚀 Funcionalidades
 
-O projeto segue o padrão MVC (Model-View-Controller) simplificado:
+### Backend (API)
 
-- **src/**: Código fonte principal.
-  - **controllers/**: Lógica de controle (CRUD).
-    - `productController.js`: Lógica de produtos.
-    - `orderController.js`: Lógica de pedidos.
-    - `customerController.js`: Lógica de clientes.
-  - **routes/**: Definição das rotas da API.
-    - `index.js`: Roteador principal que agrupa todas as rotas.
-    - `productRoutes.js`: Rotas específicas de produtos.
-    - `orderRoutes.js`: Rotas específicas de pedidos.
-    - `customerRoutes.js`: Rotas específicas de clientes.
-  - **db.js**: Banco de dados em memória (simulação).
-  - **app.js**: Configuração e inicialização do servidor Express.
+- **Autenticação Segura:** Login com JWT e Cookies HttpOnly.
+- **Controle de Acesso (RBAC):**
+  - **Admin:** Pode criar/editar/excluir usuários, produtos e pedidos.
+  - **User:** Pode visualizar produtos, realizar pedidos e ver seu próprio perfil.
+- **Documentação Automática:** Swagger UI disponível em `/api-docs`.
+- **Gestão Completa:** CRUD de Produtos, Pedidos (+Busca), Clientes e Usuários.
+- **Segurança Extra:** Configuração de CORS restrito, proteção contra XSS e Iframe.
 
-## Instalação
+### Frontend (Web)
 
-1.  Instale as dependências:
+- Integrado diretamente ao servidor (servido via `express.static`).
+- Design moderno (Glassmorphism).
+- Redirecionamento automático para Login se a sessão expirar (401/403).
 
+---
+
+## 📂 Estrutura do Projeto
+
+- **server/**: Código do servidor.
+  - `src/controllers`: Lógica de negócio.
+  - `src/routes`: Definição de rotas e middleware de proteção (`permissionVerify.js`).
+  - `src/db.js`: Banco de dados em memória.
+- **web/**: Arquivos do frontend (HTML, CSS, JS).
+
+---
+
+## 🛠️ Instalação e Execução
+
+1.  Acesse a pasta do servidor:
+    ```bash
+    cd server
+    ```
+2.  Instale as dependências:
     ```bash
     npm install
     ```
-
-2.  Inicie o servidor:
+3.  Inicie a aplicação:
     ```bash
     npm start
     ```
-    O servidor rodará em `http://localhost:3000`.
+4.  Acesse no navegador:
+    - **Aplicação:** [http://localhost:3000](http://localhost:3000)
+    - **Documentação API:** [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
 
-## Endpoints
+---
 
-### Produtos
+## 🔐 Credenciais Padrão
 
-- `GET /api/product`: Lista todos os produtos.
-- `GET /api/product/:id`: Busca um produto pelo ID.
-- `POST /api/product`: Cria um novo produto (Body: `{ "name": "...", "value": 10.0 }`).
-- `PUT /api/product/:id`: Atualiza um produto.
-- `DELETE /api/product/:id`: Remove um produto.
+| Usuário   | Senha | Tipo  | Permissões                                      |
+| :-------- | :---- | :---- | :---------------------------------------------- |
+| **admin** | 123   | Admin | Total (CRUD Usuários, Produtos, etc)            |
+| **user**  | 123   | User  | Apenas leitura de produtos e criação de pedidos |
 
-### Pedidos
+---
 
-- `GET /api/order`: Lista todos os pedidos.
-- `GET /api/order/:id`: Busca um pedido pelo ID.
-- `POST /api/order`: Cria um novo pedido (Body: `{ "items": [{ "id": 1, "quantity": 2 }] }`).
-- `PUT /api/order/:id`: Atualiza um pedido.
-- `DELETE /api/order/:id`: Remove um pedido.
+## 🔗 Endpoints Principais
 
-### Clientes
+### Autenticação
 
-- `GET /api/customer`: Lista todos os clientes.
-- `GET /api/customer/:id`: Busca um cliente pelo ID.
-- `POST /api/customer`: Cria um novo cliente (Body: `{ "name": "...", "email": "..." }`).
-- `PUT /api/customer/:id`: Atualiza um cliente.
-- `DELETE /api/customer/:id`: Remove um cliente.
+- `POST /api/login`: Realizar login.
+- `GET /api/login`: Ver dados do usuário logado.
 
-## Funcionalidades
+### Gestão (Exige Token)
 
-- **Gerenciamento de Estado**: Utiliza um "banco de dados" em memória (`db.js`) compartilhado entre os controladores.
-- **Validação Relacional**: Ao criar ou atualizar um pedido, o sistema verifica se os produtos informados realmente existem.
-- **CORS Habilitado**: Configurado para aceitar requisições de qualquer origem, permitindo integração com frontends externos.
+- `GET /api/product`: Listar produtos.
+- `GET /api/order/search`: Buscar pedidos (Filtros: `product_id`, `customer_id`).
+- _(Ver lista completa no Swagger)_
+
+---
+
+## 📝 Notas de Desenvolvimento
+
+- O projeto utiliza o padrão **MVC** simplificado.
+- O Frontend é **Static**, mas consome a API via `fetch` interceptando erros de autenticação (401).
+- Configurado para rodar na porta **3000**.
