@@ -1,30 +1,38 @@
 import { db } from '../db.js';
+import orderDb, { getNextOrderId } from '../database/orderDb.js';
+import productDb from '../database/productDb.js';
 
-export const getAllOrders = (req, res) => {
-  res.status(200).json(db.orders);
+export const getAllOrders = async (req, res) => {
+  try {
+    const orders = await orderDb.values().all();
+    // Filtrar objetos válidos (ignorar sequence se houver)
+    const validOrders = orders.filter(o => typeof o === 'object' && o.id);
+    res.status(200).json(validOrders);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar pedidos.' });
+  }
 };
 
-export const getOrderById = (req, res) => {
+export const getOrderById = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
-  if (isNaN(id)) {
-    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
-  }
-  const order = db.orders.find(o => o.id === id);
 
-  if (order) {
+  try {
+    const order = await orderDb.get(id.toString());
     res.status(200).json(order);
-  } else {
-    res.status(404).json({ error: 'Pedido não encontrado' });
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res.status(404).json({ error: 'Pedido não encontrado' });
+    }
+    res.status(500).json({ error: 'Erro interno.' });
   }
 };
 
-export const createOrder = (req, res) => {
+export const createOrder = async (req, res) => {
   const { items, customerId } = req.body;
 
-  // Validação do Cliente
   if (!customerId) {
     return res.status(400).json({ error: 'O ID do cliente é obrigatório.' });
   }
@@ -40,84 +48,116 @@ export const createOrder = (req, res) => {
       .json({ error: 'O pedido deve conter uma lista de itens.' });
   }
 
-  // Validação: Verificar se os produtos existem
-  for (const item of items) {
-    const productExists = db.products.find(p => p.id === item.id);
-    if (!productExists) {
-      return res
-        .status(400)
-        .json({ error: `Produto com ID ${item.id} não encontrado.` });
-    }
-  }
-
-  const newOrder = {
-    id: db._sequences.orders++,
-    customerId,
-    items // items structure: [{ id: productId, quantity: number }]
-  };
-
-  db.orders.push(newOrder);
-  res.status(201).json(newOrder);
-};
-
-export const updateOrder = (req, res) => {
-  const id = parseInt(req.params.id);
-  if (isNaN(id)) {
-    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
-  }
-  if (isNaN(id)) {
-    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
-  }
-  const { items } = req.body;
-  const index = db.orders.findIndex(o => o.id === id);
-
-  if (index !== -1) {
-    if (items && Array.isArray(items)) {
-      // Re-validar produtos na atualização
-      for (const item of items) {
-        const productExists = db.products.find(p => p.id === item.id);
-        if (!productExists) {
+  try {
+    for (const item of items) {
+      try {
+        await productDb.get(item.id.toString());
+      } catch (error) {
+        if (error.code === 'LEVEL_NOT_FOUND') {
           return res
             .status(400)
             .json({ error: `Produto com ID ${item.id} não encontrado.` });
         }
+        throw error;
       }
-      db.orders[index].items = items;
     }
-    res.status(200).json(db.orders[index]);
-  } else {
-    res.status(404).json({ error: 'Pedido não encontrado para atualização' });
+
+    const newId = await getNextOrderId();
+    const newOrder = {
+      id: newId,
+      customerId,
+      items
+    };
+
+    await orderDb.put(newId.toString(), newOrder);
+    res.status(201).json(newOrder);
+  } catch (error) {
+    console.error(error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Erro ao criar pedido.' });
+    }
   }
 };
 
-export const deleteOrder = (req, res) => {
+export const updateOrder = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
-  const index = db.orders.findIndex(o => o.id === id);
+  const { items } = req.body;
 
-  if (index !== -1) {
-    db.orders.splice(index, 1);
-    res.status(204).send();
-  } else {
-    res.status(404).json({ error: 'Pedido não encontrado para remoção' });
+  try {
+    const order = await orderDb.get(id.toString());
+
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        try {
+          await productDb.get(item.id.toString());
+        } catch (error) {
+          if (error.code === 'LEVEL_NOT_FOUND') {
+            return res
+              .status(400)
+              .json({ error: `Produto com ID ${item.id} não encontrado.` });
+          }
+          throw error;
+        }
+      }
+      order.items = items;
+    }
+
+    await orderDb.put(id.toString(), order);
+    res.status(200).json(order);
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res
+        .status(404)
+        .json({ error: 'Pedido não encontrado para atualização' });
+    }
+    res.status(500).json({ error: 'Erro ao atualizar pedido.' });
   }
 };
 
-export const searchOrders = (req, res) => {
+export const deleteOrder = async (req, res) => {
+  const id = parseInt(req.params.id);
+  if (isNaN(id)) {
+    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
+  }
+
+  try {
+    await orderDb.get(id.toString()); // Verifica existência
+    await orderDb.del(id.toString());
+    res.status(204).send();
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res
+        .status(404)
+        .json({ error: 'Pedido não encontrado para remoção' });
+    }
+    res.status(500).json({ error: 'Erro ao deletar pedido.' });
+  }
+};
+
+export const searchOrders = async (req, res) => {
   const { product_id, customer_id } = req.query;
-  let result = db.orders;
 
-  if (product_id) {
-    const pId = parseInt(product_id);
-    result = result.filter(order => order.items.some(item => item.id === pId));
+  try {
+    const allOrders = await orderDb.values().all();
+    let result = allOrders.filter(o => typeof o === 'object' && o.id);
+
+    if (product_id) {
+      const pId = parseInt(product_id);
+      result = result.filter(order =>
+        order.items.some(item => item.id === pId)
+      );
+    }
+
+    if (customer_id) {
+      const cId = parseInt(customer_id);
+      result = result.filter(order => order.customerId === cId);
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro na busca de pedidos.' });
   }
-
-  if (customer_id) {
-    const cId = parseInt(customer_id);
-    result = result.filter(order => order.customerId === cId);
-  }
-
-  res.status(200).json(result);
 };

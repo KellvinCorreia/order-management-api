@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser';
 import loginRoutes from './routes/loginRoutes.js';
 import { initDb } from './database/authDb.js';
 import { initProductDb } from './database/productDb.js';
+import { initOrderDb } from './database/orderDb.js';
 
 const app = express();
 const port = process.env.PORT;
@@ -51,6 +52,7 @@ const startServer = async () => {
   try {
     await initDb();
     await initProductDb();
+    await initOrderDb();
     app.listen(port, () => {
       console.log(`Servidor rodando em http://localhost:${port}`);
     });
