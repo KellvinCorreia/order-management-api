@@ -6,12 +6,6 @@ const { SECRET_KEY } = config;
 const permissionVerify = (req, res, next) => {
   const { access_token } = req.cookies;
 
-  if (access_token) {
-    console.log('✅ Cookie de Sessão Recebido:', access_token);
-  } else {
-    console.log('❌ Nenhum Cookie de Sessão encontrado.');
-  }
-
   if (!access_token) {
     return res.status(401).send({
       error: 'Acesso negado. Token não fornecido.',
@@ -21,8 +15,8 @@ const permissionVerify = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(access_token, SECRET_KEY);
-    req.user = decoded; // Salva dados do usuário na requisição
-    next(); // Permite acesso
+    req.user = decoded;
+    next();
   } catch (error) {
     return res.status(403).send({
       error: 'Token inválido ou expirado.',

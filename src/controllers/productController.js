@@ -1,24 +1,33 @@
-import { db } from '../db.js';
+import productDb, { getNextId } from '../database/productDb.js';
 
-export const getAllProducts = (req, res) => {
-  res.status(200).json(db.products);
+export const getAllProducts = async (req, res) => {
+  try {
+    const products = await productDb.values().all();
+    const validProducts = products.filter(p => typeof p === 'object' && p.id);
+    res.status(200).json(validProducts);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar produtos.' });
+  }
 };
 
-export const getProductById = (req, res) => {
+export const getProductById = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
-  const product = db.products.find(p => p.id === id);
 
-  if (product) {
+  try {
+    const product = await productDb.get(id.toString());
     res.status(200).json(product);
-  } else {
-    res.status(404).json({ error: 'Produto não encontrado' });
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res.status(404).json({ error: 'Produto não encontrado' });
+    }
+    res.status(500).json({ error: 'Erro interno.' });
   }
 };
 
-export const createProduct = (req, res) => {
+export const createProduct = async (req, res) => {
   const { name, value } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -38,27 +47,32 @@ export const createProduct = (req, res) => {
       .json({ error: 'Valor é obrigatório e deve ser numérico.' });
   }
 
-  const newProduct = {
-    id: db._sequences.products++,
-    name,
-    value: parseFloat(value).toFixed(2)
-  };
+  try {
+    const newId = await getNextId();
+    const newProduct = {
+      id: newId,
+      name,
+      value: parseFloat(value).toFixed(2)
+    };
 
-  db.products.push(newProduct);
-  res.status(201).json(newProduct);
+    await productDb.put(newId.toString(), newProduct);
+    res.status(201).json(newProduct);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao criar produto.' });
+  }
 };
 
-export const updateProduct = (req, res) => {
+export const updateProduct = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
   const { name, value } = req.body;
-  const index = db.products.findIndex(p => p.id === id);
 
-  if (index !== -1) {
-    const product = db.products[index];
-    // Partial update (PATCH-like behavior) for UPDATE requirement
+  try {
+    const product = await productDb.get(id.toString());
+
     if (name !== undefined) {
       if (typeof name !== 'string' || name.trim().length === 0) {
         return res
@@ -75,23 +89,34 @@ export const updateProduct = (req, res) => {
       product.value = parseFloat(value).toFixed(2);
     }
 
+    await productDb.put(id.toString(), product);
     res.status(200).json(product);
-  } else {
-    res.status(404).json({ error: 'Produto não encontrado para atualização' });
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res
+        .status(404)
+        .json({ error: 'Produto não encontrado para atualização' });
+    }
+    res.status(500).json({ error: 'Erro ao atualizar produto.' });
   }
 };
 
-export const deleteProduct = (req, res) => {
+export const deleteProduct = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
-  const index = db.products.findIndex(p => p.id === id);
 
-  if (index !== -1) {
-    db.products.splice(index, 1);
+  try {
+    await productDb.get(id.toString());
+    await productDb.del(id.toString());
     res.status(204).send();
-  } else {
-    res.status(404).json({ error: 'Produto não encontrado para remoção' });
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res
+        .status(404)
+        .json({ error: 'Produto não encontrado para remoção' });
+    }
+    res.status(500).json({ error: 'Erro ao deletar produto.' });
   }
 };
