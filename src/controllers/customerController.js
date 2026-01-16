@@ -1,27 +1,34 @@
-import { db } from '../db.js';
+import customerDb, { getNextCustomerId } from '../database/customerDb.js';
 
-export const getAllCustomers = (req, res) => {
-  res.status(200).json(db.customers);
+export const getAllCustomers = async (req, res) => {
+  try {
+    const customers = await customerDb.values().all();
+    // Filtra apenas objetos válidos (ignora a sequence key)
+    const validCustomers = customers.filter(c => typeof c === 'object' && c.id);
+    res.status(200).json(validCustomers);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao listar clientes.' });
+  }
 };
 
-export const getCustomerById = (req, res) => {
+export const getCustomerById = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
-  if (isNaN(id)) {
-    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
-  }
-  const customer = db.customers.find(c => c.id === id);
 
-  if (customer) {
+  try {
+    const customer = await customerDb.get(id.toString());
     res.status(200).json(customer);
-  } else {
-    res.status(404).json({ error: 'Cliente não encontrado' });
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res.status(404).json({ error: 'Cliente não encontrado' });
+    }
+    res.status(500).json({ error: 'Erro interno.' });
   }
 };
 
-export const createCustomer = (req, res) => {
+export const createCustomer = async (req, res) => {
   const { name, email } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -34,35 +41,36 @@ export const createCustomer = (req, res) => {
     return res.status(400).json({ error: 'Email é obrigatório.' });
   }
 
-  // Basic email validation (simple regex)
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return res.status(400).json({ error: 'Formato de email inválido' });
   }
 
-  const newCustomer = {
-    id: db._sequences.customers++,
-    name,
-    email
-  };
+  try {
+    const newId = await getNextCustomerId();
+    const newCustomer = {
+      id: newId,
+      name,
+      email
+    };
 
-  db.customers.push(newCustomer);
-  res.status(201).json(newCustomer);
+    await customerDb.put(newId.toString(), newCustomer);
+    res.status(201).json(newCustomer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Erro ao criar cliente.' });
+  }
 };
 
-export const updateCustomer = (req, res) => {
+export const updateCustomer = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
-  if (isNaN(id)) {
-    return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
-  }
   const { name, email } = req.body;
-  const index = db.customers.findIndex(c => c.id === id);
 
-  if (index !== -1) {
-    const customer = db.customers[index];
+  try {
+    const customer = await customerDb.get(id.toString());
 
     if (name !== undefined) {
       if (typeof name !== 'string' || name.trim().length === 0) {
@@ -81,23 +89,34 @@ export const updateCustomer = (req, res) => {
       customer.email = email;
     }
 
+    await customerDb.put(id.toString(), customer);
     res.status(200).json(customer);
-  } else {
-    res.status(404).json({ error: 'Cliente não encontrado para atualização' });
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res
+        .status(404)
+        .json({ error: 'Cliente não encontrado para atualização' });
+    }
+    res.status(500).json({ error: 'Erro ao atualizar cliente.' });
   }
 };
 
-export const deleteCustomer = (req, res) => {
+export const deleteCustomer = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
-  const index = db.customers.findIndex(c => c.id === id);
 
-  if (index !== -1) {
-    db.customers.splice(index, 1);
+  try {
+    await customerDb.get(id.toString());
+    await customerDb.del(id.toString());
     res.status(204).send();
-  } else {
-    res.status(404).json({ error: 'Cliente não encontrado para remoção' });
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res
+        .status(404)
+        .json({ error: 'Cliente não encontrado para remoção' });
+    }
+    res.status(500).json({ error: 'Erro ao deletar cliente.' });
   }
 };

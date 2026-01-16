@@ -1,11 +1,8 @@
-import { db } from '../db.js';
 import productDb, { getNextId } from '../database/productDb.js';
 
-// --- LISTAR TODOS (GET /api/products) ---
 export const getAllProducts = async (req, res) => {
   try {
     const products = await productDb.values().all();
-    // Filtra apenas objetos válidos (ignora a sequence key se aparecer nos values)
     const validProducts = products.filter(p => typeof p === 'object' && p.id);
     res.status(200).json(validProducts);
   } catch (error) {
@@ -13,7 +10,6 @@ export const getAllProducts = async (req, res) => {
   }
 };
 
-// --- BUSCAR POR ID (GET /api/products/:id) ---
 export const getProductById = async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) {

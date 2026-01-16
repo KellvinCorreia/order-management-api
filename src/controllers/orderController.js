@@ -1,11 +1,10 @@
-import { db } from '../db.js';
 import orderDb, { getNextOrderId } from '../database/orderDb.js';
 import productDb from '../database/productDb.js';
+import customerDb from '../database/customerDb.js';
 
 export const getAllOrders = async (req, res) => {
   try {
     const orders = await orderDb.values().all();
-    // Filtrar objetos válidos (ignorar sequence se houver)
     const validOrders = orders.filter(o => typeof o === 'object' && o.id);
     res.status(200).json(validOrders);
   } catch (error) {
@@ -37,9 +36,13 @@ export const createOrder = async (req, res) => {
     return res.status(400).json({ error: 'O ID do cliente é obrigatório.' });
   }
 
-  const customerExists = db.customers.find(c => c.id === customerId);
-  if (!customerExists) {
-    return res.status(400).json({ error: 'Cliente não encontrado.' });
+  try {
+    await customerDb.get(customerId.toString());
+  } catch (error) {
+    if (error.code === 'LEVEL_NOT_FOUND') {
+      return res.status(400).json({ error: 'Cliente não encontrado.' });
+    }
+    throw error;
   }
 
   if (!items || !Array.isArray(items) || items.length === 0) {
@@ -124,7 +127,7 @@ export const deleteOrder = async (req, res) => {
   }
 
   try {
-    await orderDb.get(id.toString()); // Verifica existência
+    await orderDb.get(id.toString());
     await orderDb.del(id.toString());
     res.status(204).send();
   } catch (error) {
