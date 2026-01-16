@@ -12,11 +12,9 @@ import permissionVerify from './permissionVerify.js';
 
 const router = express.Router();
 
-// Rota Pública
 router.post('/login', createLogin);
 router.post('/logout', logout);
 
-// Rotas Protegidas (Exigem Login)
 router.use('/login', permissionVerify);
 
 router.get('/login', getOwnProfile);
