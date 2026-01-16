@@ -9,6 +9,7 @@ import routes from './routes/index.js';
 import cookieParser from 'cookie-parser';
 import loginRoutes from './routes/loginRoutes.js';
 import { initDb } from './database/authDb.js';
+import { initProductDb } from './database/productDb.js';
 
 const app = express();
 const port = process.env.PORT;
@@ -49,6 +50,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await initDb();
+    await initProductDb();
     app.listen(port, () => {
       console.log(`Servidor rodando em http://localhost:${port}`);
     });
