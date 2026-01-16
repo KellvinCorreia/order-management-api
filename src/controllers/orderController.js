@@ -37,7 +37,12 @@ export const createOrder = async (req, res) => {
   }
 
   try {
-    await customerDb.get(customerId.toString());
+    const validCustomer = await customerDb.get(customerId.toString());
+    if (!validCustomer) {
+      const err = new Error('Cliente não encontrado');
+      err.code = 'LEVEL_NOT_FOUND';
+      throw err;
+    }
   } catch (error) {
     if (error.code === 'LEVEL_NOT_FOUND') {
       return res.status(400).json({ error: 'Cliente não encontrado.' });
@@ -54,7 +59,12 @@ export const createOrder = async (req, res) => {
   try {
     for (const item of items) {
       try {
-        await productDb.get(item.id.toString());
+        const validProduct = await productDb.get(item.id.toString());
+        if (!validProduct) {
+          const err = new Error('Produto não encontrado');
+          err.code = 'LEVEL_NOT_FOUND';
+          throw err;
+        }
       } catch (error) {
         if (error.code === 'LEVEL_NOT_FOUND') {
           return res
@@ -87,22 +97,46 @@ export const updateOrder = async (req, res) => {
   if (isNaN(id)) {
     return res.status(400).json({ error: 'ID inválido. Deve ser um número.' });
   }
-  const { items } = req.body;
+  const { items, customerId } = req.body;
 
   try {
     const order = await orderDb.get(id.toString());
 
+    if (customerId) {
+      try {
+        const validCustomer = await customerDb.get(customerId.toString());
+        if (!validCustomer) {
+          const err = new Error('Cliente não encontrado');
+          err.code = 'LEVEL_NOT_FOUND';
+          throw err;
+        }
+        order.customerId = customerId;
+      } catch (error) {
+        if (error.code === 'LEVEL_NOT_FOUND') {
+          return res.status(400).json({ error: 'Cliente não encontrado.' });
+        }
+        throw error;
+      }
+    }
+
     if (items && Array.isArray(items)) {
       for (const item of items) {
-        try {
-          await productDb.get(item.id.toString());
-        } catch (error) {
-          if (error.code === 'LEVEL_NOT_FOUND') {
-            return res
-              .status(400)
-              .json({ error: `Produto com ID ${item.id} não encontrado.` });
+        for (const item of items) {
+          try {
+            const validProduct = await productDb.get(item.id.toString());
+            if (!validProduct) {
+              const err = new Error('Produto não encontrado');
+              err.code = 'LEVEL_NOT_FOUND';
+              throw err;
+            }
+          } catch (error) {
+            if (error.code === 'LEVEL_NOT_FOUND') {
+              return res
+                .status(400)
+                .json({ error: `Produto com ID ${item.id} não encontrado.` });
+            }
+            throw error;
           }
-          throw error;
         }
       }
       order.items = items;
