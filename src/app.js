@@ -8,6 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import routes from './routes/index.js';
 import cookieParser from 'cookie-parser';
 import loginRoutes from './routes/loginRoutes.js';
+import { initDb } from './database/authDb.js';
 
 const app = express();
 const port = process.env.PORT;
@@ -45,6 +46,16 @@ app.use((err, req, res, next) => {
     .json({ error: 'Erro interno do servidor. Tente novamente mais tarde.' });
 });
 
-app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
-});
+const startServer = async () => {
+  try {
+    await initDb();
+    app.listen(port, () => {
+      console.log(`Servidor rodando em http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error('Falha crítica ao iniciar:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

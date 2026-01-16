@@ -11,6 +11,10 @@ export const createLogin = async (req, res) => {
   try {
     const foundUser = await authDb.get(user);
 
+    if (!foundUser) {
+      return res.status(401).send({ error: 'Usuário não encontrado.' });
+    }
+
     const match = await bcrypt.compare(pwd, foundUser.pwd);
 
     if (!match) {
@@ -32,7 +36,8 @@ export const createLogin = async (req, res) => {
       token: token
     });
   } catch (error) {
-    if (error.code === 'LEVEL_NOT_FOUND') {
+    console.error('LOGIN ERROR:', error);
+    if (error.code === 'LEVEL_NOT_FOUND' || error.notFound) {
       return res.status(401).send({ error: 'Usuário ou senha incorretos.' });
     }
     return res.status(500).json({ error: 'Erro interno ao logar.' });
@@ -93,7 +98,7 @@ export const updateUser = async (req, res) => {
     }
     if (userType) user.userType = userType;
 
-    await authDb.put(username, user); 
+    await authDb.put(username, user);
     res.json({ message: 'Usuário atualizado', user });
   } catch (error) {
     if (error.code === 'LEVEL_NOT_FOUND') {
